@@ -1,6 +1,7 @@
 #include <chrono>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <thread>
 
 #include <httplib.h>
@@ -15,24 +16,86 @@ int main(void) {
 
   // Logger
   svr.set_logger([](const Request &req, const Response &res) {
-    std::cout << res.status << " " << req.method << " " << req.path
-              << std::endl;
+// the following are UBUNTU/LINUX, and MacOS ONLY terminal color codes.
+#define RESET "\033[0m"
+#define BLACK "\033[30m"   /* Black */
+#define RED "\033[31m"     /* Red */
+#define GREEN "\033[32m"   /* Green */
+#define YELLOW "\033[33m"  /* Yellow */
+#define BLUE "\033[34m"    /* Blue */
+#define MAGENTA "\033[35m" /* Magenta */
+#define CYAN "\033[36m"    /* Cyan */
+#define WHITE "\033[37m"   /* White */
+    if (200 <= res.status && res.status < 400) {
+      std::cout << GREEN;
+    } else if (400 <= res.status && res.status < 500) {
+      std::cout << YELLOW;
+    } else {
+      std::cout << RED;
+    }
+    std::cout << res.status << " " << req.method << " " << req.path;
+    std::cout << RESET << std::endl;
   });
+
+  // Mount static file server
+  svr.set_mount_point("/public", "./public");
+
+  // Error handling
+  svr.set_error_handler([](const Request &req, Response &res) {
+    std::stringstream body;
+    if (0 == req.path.rfind("/api/", 0)) {
+      // API route
+      if (400 <= res.status && res.status < 500) {
+        body << R"({"message":"not found"})";
+      } else {
+        body << R"({"message":"system error"})";
+      }
+      res.set_content(body.str(), "application/json");
+    } else {
+      // other route
+      // => DROP request
+    }
+  });
+  svr.set_exception_handler(
+      [](const Request &req, Response &res, std::exception_ptr ep) {
+        res.status = 500;
+        try {
+          std::rethrow_exception(ep);
+        } catch (std::exception &e) {
+          std::cout << "[ERROR] " << e.what() << std::endl;
+        } catch (...) {
+          std::cout << "Unknown Exception" << std::endl;
+        }
+
+        std::stringstream body;
+        if (0 == req.path.rfind("/api/", 0)) {
+          // API route
+          if (400 <= res.status && res.status < 500) {
+            body << R"({"message":"not found"})";
+          } else {
+            body << R"({"message":"system error"})";
+          }
+          res.set_content(body.str(), "application/json");
+        } else {
+          // other route
+          // => DROP request
+        }
+      });
 
   //-------------------------------------
   // GET /
   // Hello World!
   svr.Get("/", [](const Request &req, Response &res) {
-    std::stringstream html;
-    html << "<h1>Hello World!</h1>";
+    std::stringstream body;
+    body << "<h1>Hello World!</h1>";
 
-    html << "<pre>";
+    body << "<pre>";
     const json headersJson(req.headers);
     const std::string jsonStr = headersJson.dump(2);
-    html << jsonStr;
-    html << "</pre>";
+    body << jsonStr;
+    body << "</pre>";
 
-    res.set_content(html.str(), "text/html");
+    res.set_content(body.str(), "text/html");
   });
 
   //-------------------------------------
@@ -50,6 +113,20 @@ int main(void) {
     th.detach(); // スレッドを投げっぱなしにする
 
     res.set_content("OK", "text/html");
+  });
+
+  //-------------------------------------
+  // GET /error
+  // Throws error
+  svr.Get("/error", [](const Request &req, Response &res) {
+    throw std::invalid_argument("MyFunc argument too large.");
+  });
+
+  //-------------------------------------
+  // GET /api/error
+  // Throws API error
+  svr.Get("/api/error", [](const Request &req, Response &res) {
+    throw std::invalid_argument("MyFunc argument too large.");
   });
 
   //-------------------------------------
