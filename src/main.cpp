@@ -1,16 +1,31 @@
 #include <iostream>
+#include <sstream>
 
 #include <httplib.h>
-using namespace httplib;
+using Request = httplib::Request;
+using Response = httplib::Response;
+
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 int main(void) {
-  Server svr;
+  httplib::Server svr;
 
-  svr.Get("/hi", [](const Request &req, Response &res) {
+  svr.Get("/", [](const Request &req, Response &res) {
     std::cout << req.method << " " << req.path << std::endl;
-    res.set_content("Hello World!", "text/plain");
+
+    std::stringstream html;
+    html << "<h1>Hello World!</h1>";
+
+    html << "<pre>";
+    const json headersJson(req.headers);
+    const std::string jsonStr = headersJson.dump(2);
+    html << jsonStr;
+    html << "</pre>";
+
+    res.set_content(html.str(), "text/html");
   });
 
-  std::cout << "listen on 8080" << std::endl;
+  std::cout << "listen http://localhost:8080/" << std::endl;
   svr.listen("0.0.0.0", 8080);
 }
