@@ -12,6 +12,9 @@ add_executable(main
 
 target_compile_features(main PUBLIC cxx_std_11)
 
+# Fix warning C4819 for Visual Studio (Use UTF-8)
+set_target_properties(main PROPERTIES COMPILE_FLAGS "/utf-8")
+
 target_include_directories(main PUBLIC
   ./lib/
 )
