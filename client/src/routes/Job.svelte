@@ -20,13 +20,17 @@
 
 <!------------------------------------>
 
-<div>
+<div class="container">
   <div>#{id} ({imageFile.type}) {imageFile.name}</div>
   <img src="" alt="upload" class="img" bind:this={imgDom} />
 </div>
 
 <!------------------------------------>
 <style>
+  .container {
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+  }
   .img {
     height: 150px;
   }
