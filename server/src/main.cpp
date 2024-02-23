@@ -3,9 +3,11 @@
 
 #include <httplib.h>
 
+#include "./utils/logger.hpp"
+
 #include "./jobs/create.hpp"
 #include "./jobs/get.hpp"
-#include "./utils/logger.hpp"
+#include "./jobs/run.hpp"
 
 int main(void) {
   httplib::Server svr;
@@ -21,26 +23,14 @@ int main(void) {
           [](const auto &req, auto &res) { jobs::get(req, res); });
 
   //-------------------------------------
+  // GET /api/jobs/:id/run
+  svr.Get("/api/jobs/:id/run",
+          [](const auto &req, auto &res) { jobs::run(req, res); });
+
+  //-------------------------------------
   // OPTIONS /api/*
   svr.Options(R"(/api/(.+))", [](const auto &req, auto &res) {
     res.set_content("", "application/json");
-  });
-
-  //-------------------------------------
-  // GET /thread
-  // Tests threading
-  svr.Get("/thread", [](const auto &req, auto &res) {
-    std::thread th([&]() {
-      std::cout << "Sleeping for 3 second.." << std::endl;
-
-      std::this_thread::sleep_for(
-          std::chrono::milliseconds(3000)); // 3秒間スリープします
-
-      std::cout << "3 second elapsed.." << std::endl;
-    });
-    th.detach(); // スレッドを投げっぱなしにする
-
-    res.set_content("OK", "text/html");
   });
 
   //-------------------------------------

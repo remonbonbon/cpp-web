@@ -1,9 +1,8 @@
-#ifndef _MY_JOBS_RUN_
-#define _MY_JOBS_RUN_
+#ifndef _MY_JOBS_GET_
+#define _MY_JOBS_GET_
 
 #include <filesystem>
 #include <fstream>
-#include <thread>
 
 #include <httplib.h>
 using Request = httplib::Request;
