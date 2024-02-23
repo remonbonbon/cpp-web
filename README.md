@@ -1,6 +1,10 @@
 ### Build
 
+#### Server
+
 ```sh
+$ cd ./server/
+
 // First time only
 $ cmake -S . -B build
 
@@ -13,8 +17,17 @@ $ cmake --build build --config Debug
 $ cmake --build build --config Release
 ```
 
+#### Client
+
+```sh
+$ cd ./client/
+
+$ npm run build
+```
+
 ### Run
 
 ```sh
+$ cd ./server/
 $ ./build/main
 ```

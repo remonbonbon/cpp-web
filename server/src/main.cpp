@@ -42,7 +42,7 @@ int main(void) {
 
   //-------------------------------------
   // Mount static file server
-  svr.set_mount_point("/public", "../public");
+  svr.set_mount_point("/", "../public");
 
   //-------------------------------------
   // Logger
