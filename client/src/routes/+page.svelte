@@ -1,7 +1,10 @@
 <script>
   import { ulid } from "ulid";
+  import { fromUint8Array as base64Encode } from "js-base64";
+  import axios from "axios";
 
   import Job from "./Job.svelte";
+  import config from "./config";
 
   let jobs = [];
   let isDragOver = false;
@@ -22,14 +25,33 @@
 
   function _addImages(files) {
     for (const file of files) {
-      // console.log(file);
-
       const id = ulid();
-      jobs.unshift({
+      const job = {
         id,
-        imageFile: file,
-      });
+      };
+      jobs.unshift(job);
+
+      (async function () {
+        try {
+          const buf = await file.arrayBuffer();
+          const base64 = base64Encode(new Uint8Array(buf));
+          const res = await axios({
+            method: "post",
+            baseURL: config.baseURL,
+            url: `/api/jobs/${id}`,
+            data: {
+              filename: file.name,
+              type: file.type,
+              data: base64,
+            },
+          });
+          console.log(res.data);
+        } catch (e) {
+          console.error(e);
+        }
+      })();
     }
+
     // Trigger reactive
     jobs = jobs;
   }
@@ -68,8 +90,8 @@
     </span>
   </div>
   <div class="jobs" class:hiddenOnDrag={isDragOver}>
-    {#each jobs as { id, imageFile } (id)}
-      <Job bind:id bind:imageFile />
+    {#each jobs as { id } (id)}
+      <Job bind:id />
     {/each}
   </div>
 </div>

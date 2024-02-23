@@ -28,48 +28,49 @@ void create(const Request &req, Response &res) {
   const std::string type = params["type"];
   const std::string dataBase64 = params["data"];
 
-  std::string ext;
-  if (params["type"] == "image/jpeg") {
-    ext = ".jpg";
-  } else if (params["type"] == "image/png") {
-    ext = ".png";
-  } else {
-    throw std::invalid_argument("Unsupported file type");
+  // 画像ファイルパスを決定
+  std::filesystem::path imgPath = DATA_DIR;
+  {
+    std::string ext;
+    if (params["type"] == "image/jpeg") {
+      ext = ".jpg";
+    } else if (params["type"] == "image/png") {
+      ext = ".png";
+    } else {
+      throw std::invalid_argument("Unsupported file type");
+    }
+    imgPath.append(id + ext);
+  }
+
+  // 画像ファイルを保存
+  {
+    // std::cout << "base64 size: " << dataBase64.length() << std::endl;
+    std::vector<uint8_t> dataBinary = base64::decode(dataBase64);
+    // std::cout << "binary size: " << dataBinary.size() << std::endl;
+
+    std::ofstream f(imgPath, std::ios::out | std::ios::binary);
+    f.write((char *)&dataBinary[0], dataBinary.size() * sizeof(dataBinary[0]));
+    f.close();
   }
 
   // JSONファイルを作成
+  json data;
   {
-    std::filesystem::path p = DATA_DIR;
-    p.append(id + ".json");
+    std::filesystem::path jsonPath = DATA_DIR;
+    jsonPath.append(id + ".json");
 
     const auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
                          std::chrono::system_clock::now().time_since_epoch())
                          .count();
 
-    json data;
     data["id"] = id;
-    data["filename"] = filename;
+    data["filename"] = imgPath.filename();
+    data["originalFilename"] = filename;
     data["type"] = type;
     data["createdAt"] = now;
 
-    std::ofstream f;
-    f.open(p, std::ios::out);
+    std::ofstream f(jsonPath);
     f << data.dump(2);
-    f.close();
-  }
-
-  // 画像ファイルを保存
-  {
-    std::filesystem::path p = DATA_DIR;
-    p.append(id + ext);
-
-    // std::cout << "base64 size: " << dataBase64.length() << std::endl;
-    std::vector<uint8_t> dataBinary = base64::decode(dataBase64);
-    // std::cout << "binary size: " << dataBinary.size() << std::endl;
-
-    std::ofstream f;
-    f.open(p, std::ios::out | std::ios::binary);
-    f.write((char *)&dataBinary[0], dataBinary.size() * sizeof(dataBinary[0]));
     f.close();
   }
 
@@ -77,9 +78,7 @@ void create(const Request &req, Response &res) {
   std::thread t(_runJob, id);
   t.detach(); // スレッドを投げっぱなしにする
 
-  std::stringstream body;
-  body << R"({"message":"OK"})";
-  res.set_content(body.str(), "application/json");
+  res.set_content(data.dump(), "application/json");
 }
 
 } // namespace jobs

@@ -29,7 +29,7 @@ void _log() {}
 template <typename First, typename... Rest>
 void _log(First first, Rest... rest) {
   std::cout << first;
-  if (sizeof...(rest)) {
+  if (0 < sizeof...(rest)) {
     std::cout << " ";
   }
   _log(rest...);
