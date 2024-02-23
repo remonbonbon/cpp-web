@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { fromUint8Array as base64Encode } from "js-base64";
   import axios from "axios";
+  import { ulid } from "ulid";
 
   export let id = null;
   export let imageFile = null;
@@ -23,16 +24,15 @@
     console.log("base64 size", base64.length);
 
     try {
+      const id = ulid();
       const res = await axios({
         method: "post",
         baseURL: "http://127.0.0.1:8080/",
-        url: "/api/jobs",
+        url: `/api/jobs/${id}`,
         data: {
-          image: base64,
-        },
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          filename: imageFile.name,
+          type: imageFile.type,
+          data: base64,
         },
       });
       console.log(res);

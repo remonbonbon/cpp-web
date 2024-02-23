@@ -1,111 +1,30 @@
-#include <chrono>
-#include <fstream>
-#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <thread>
 
 #include <httplib.h>
-using Request = httplib::Request;
-using Response = httplib::Response;
 
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
-
-#include <cppcodec/base64_rfc4648.hpp>
-using base64 = cppcodec::base64_rfc4648;
+#include "./jobs/create.hpp"
+#include "./utils/logger.hpp"
 
 int main(void) {
   httplib::Server svr;
 
-  // Logger
-  svr.set_logger([](const Request &req, const Response &res) {
-// the following are UBUNTU/LINUX, and MacOS ONLY terminal color codes.
-#define RESET "\033[0m"
-#define BLACK "\033[30m"   /* Black */
-#define RED "\033[31m"     /* Red */
-#define GREEN "\033[32m"   /* Green */
-#define YELLOW "\033[33m"  /* Yellow */
-#define BLUE "\033[34m"    /* Blue */
-#define MAGENTA "\033[35m" /* Magenta */
-#define CYAN "\033[36m"    /* Cyan */
-#define WHITE "\033[37m"   /* White */
-    if (200 <= res.status && res.status < 400) {
-      std::cout << GREEN;
-    } else if (400 <= res.status && res.status < 500) {
-      std::cout << YELLOW;
-    } else {
-      std::cout << RED;
-    }
-    std::cout << res.status << " " << req.method << " " << req.path;
-    std::cout << RESET << std::endl;
-  });
-
-  // Mount static file server
-  svr.set_mount_point("/public", "../public");
-
-  // Error handling
-  svr.set_error_handler([](const Request &req, Response &res) {
-    std::stringstream body;
-    if (0 == req.path.rfind("/api/", 0)) {
-      // API route
-      if (400 <= res.status && res.status < 500) {
-        body << R"({"message":"not found"})";
-      } else {
-        body << R"({"message":"system error"})";
-      }
-      res.set_content(body.str(), "application/json");
-    } else {
-      // other route
-      // => DROP request
-    }
-  });
-  svr.set_exception_handler(
-      [](const Request &req, Response &res, std::exception_ptr ep) {
-        res.status = 500;
-        try {
-          std::rethrow_exception(ep);
-        } catch (std::exception &e) {
-          std::cout << "[ERROR] " << e.what() << std::endl;
-        } catch (...) {
-          std::cout << "Unknown Exception" << std::endl;
-        }
-
-        std::stringstream body;
-        if (0 == req.path.rfind("/api/", 0)) {
-          // API route
-          if (400 <= res.status && res.status < 500) {
-            body << R"({"message":"not found"})";
-          } else {
-            body << R"({"message":"system error"})";
-          }
-          res.set_content(body.str(), "application/json");
-        } else {
-          // other route
-          // => DROP request
-        }
-      });
+  //-------------------------------------
+  // POST /api/jobs/:id
+  svr.Post("/api/jobs/:id",
+           [](const auto &req, auto &res) { jobs::create(req, res); });
 
   //-------------------------------------
-  // GET /
-  // Hello World!
-  svr.Get("/", [](const Request &req, Response &res) {
-    std::stringstream body;
-    body << "<h1>Hello World!</h1>";
-
-    body << "<pre>";
-    const json headersJson(req.headers);
-    const std::string jsonStr = headersJson.dump(2);
-    body << jsonStr;
-    body << "</pre>";
-
-    res.set_content(body.str(), "text/html");
+  // OPTIONS /api/*
+  svr.Options(R"(/api/(.+))", [](const auto &req, auto &res) {
+    res.set_content("", "application/json");
   });
 
   //-------------------------------------
   // GET /thread
   // Tests threading
-  svr.Get("/thread", [](const Request &req, Response &res) {
+  svr.Get("/thread", [](const auto &req, auto &res) {
     std::thread th([&]() {
       std::cout << "Sleeping for 3 second.." << std::endl;
 
@@ -120,49 +39,67 @@ int main(void) {
   });
 
   //-------------------------------------
-  // GET /error
-  // Throws error
-  svr.Get("/error", [](const Request &req, Response &res) {
-    throw std::invalid_argument("MyFunc argument too large.");
-  });
-
-  //-------------------------------------
-  // GET /api/error
-  // Throws API error
-  svr.Get("/api/error", [](const Request &req, Response &res) {
-    throw std::invalid_argument("MyFunc argument too large.");
-  });
-
-  //-------------------------------------
-  // OPTIONS /api/*
-  // Allow all
-  svr.Options(R"(/api/(.+))", [](const Request &req, Response &res) {
+  // Allow CORS for all
+  svr.set_post_routing_handler([](const auto &req, auto &res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     res.set_header("Access-Control-Allow-Headers", "*");
-    res.set_content("", "application/json");
   });
 
   //-------------------------------------
-  // POST /api/jobs
-  svr.Post("/api/jobs", [](const Request &req, Response &res) {
-    // std::cout << req.body << std::endl;
-    const json reqBody = json::parse(req.body);
-    const std::string imageBase64 = reqBody["image"];
+  // Mount static file server
+  svr.set_mount_point("/public", "../public");
 
-    std::cout << "base64 size: " << imageBase64.length() << std::endl;
-    std::vector<uint8_t> decoded = base64::decode(imageBase64);
-    std::cout << "binary size: " << decoded.size() << std::endl;
+  //-------------------------------------
+  // Logger
+  svr.set_logger([](const auto &req, const auto &res) {
+    if (200 <= res.status && res.status < 400) {
+      logger::info(res.status, req.method, req.path);
+    } else if (400 <= res.status && res.status < 500) {
+      logger::warn(res.status, req.method, req.path);
+    } else {
+      logger::error(res.status, req.method, req.path);
+    }
+  });
 
-    // std::ofstream f;
-    // f.open("output.jpeg", std::ios::out | std::ios::binary);
-    // f.write((char *)&decoded[0], decoded.size() * sizeof(decoded[0]));
-    // f.close();
+  //-------------------------------------
+  // Error handling
+  svr.set_exception_handler([](const auto &req, auto &res, auto ep) {
+    res.status = 500;
+    try {
+      std::rethrow_exception(ep);
+    } catch (std::exception &e) {
+      logger::error(e.what());
+    } catch (...) {
+      logger::error("Unknown Exception");
+    }
 
     std::stringstream body;
-    body << R"({"message":"OK"})";
-    res.set_header("Access-Control-Allow-Origin", "*");
-    res.set_header("Access-Control-Allow-Headers", "*");
-    res.set_content(body.str(), "application/json");
+    if (0 == req.path.rfind("/api/", 0)) {
+      // API route
+      if (400 <= res.status && res.status < 500) {
+        body << R"({"message":"not found"})";
+      } else {
+        body << R"({"message":"system error"})";
+      }
+      res.set_content(body.str(), "application/json");
+    } else {
+      // other route
+      // => DROP request
+    }
+  });
+  svr.set_error_handler([](const auto &req, auto &res) {
+    std::stringstream body;
+    if (0 == req.path.rfind("/api/", 0)) {
+      // API route
+      if (400 <= res.status && res.status < 500) {
+        body << R"({"message":"not found"})";
+      } else {
+        body << R"({"message":"system error"})";
+      }
+      res.set_content(body.str(), "application/json");
+    } else {
+      // DROP others
+    }
   });
 
   //-------------------------------------

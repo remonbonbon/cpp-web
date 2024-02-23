@@ -10,7 +10,7 @@ add_executable(main
   src/main.cpp
 )
 
-target_compile_features(main PUBLIC cxx_std_11)
+target_compile_features(main PUBLIC cxx_std_17)
 
 # Fix warning C4819 for Visual Studio (Use UTF-8)
 set_target_properties(main PROPERTIES COMPILE_FLAGS "/utf-8")
