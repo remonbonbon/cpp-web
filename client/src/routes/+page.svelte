@@ -8,21 +8,30 @@
   let isDragOver = false;
   let dragOverCounter = 0;
 
-  function dropHandler(ev) {
+  function onDrop(ev) {
     isDragOver = false;
     dragOverCounter = 0;
 
-    for (const file of ev.dataTransfer.files) {
+    _addImages(ev.dataTransfer.files);
+  }
+
+  function onInputFiles(ev) {
+    _addImages(ev.target.files);
+
+    ev.target.value = ""; // 同じファイルを連続で選ぶとchangeイベントが発生しない
+  }
+
+  function _addImages(files) {
+    for (const file of files) {
       // console.log(file);
 
       jobs.unshift({
         id: id++,
         imageFile: file,
       });
-
-      // Trigger reactive
-      jobs = jobs;
     }
+    // Trigger reactive
+    jobs = jobs;
   }
 </script>
 
@@ -45,12 +54,20 @@
   <div
     class="dropZone"
     class:dragOver={isDragOver}
-    on:drop|preventDefault={dropHandler}
+    on:drop|preventDefault={onDrop}
     on:dragover|preventDefault={() => {}}
   >
     <span>画像ファイルをここにドラッグ＆ドロップ</span>
+    <span class:hiddenOnDrag={isDragOver}>
+      or <input
+        type="file"
+        accept=".jpg,.jpeg,.png"
+        multiple
+        on:change={onInputFiles}
+      />
+    </span>
   </div>
-  <div class="jobs" class:dragOver={isDragOver}>
+  <div class="jobs" class:hiddenOnDrag={isDragOver}>
     {#each jobs as { id, imageFile } (id)}
       <Job bind:id bind:imageFile />
     {/each}
@@ -82,6 +99,8 @@
     height: 8rem;
 
     display: flex;
+    flex-flow: column;
+    row-gap: 1ex;
     align-items: center;
     justify-content: center;
   }
@@ -101,7 +120,8 @@
     flex-flow: column;
     row-gap: 0.5rem;
   }
-  .jobs.dragOver {
+
+  .hiddenOnDrag {
     display: none;
   }
 </style>
