@@ -1,4 +1,5 @@
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -10,6 +11,9 @@ using Response = httplib::Response;
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
+
+#include <cppcodec/base64_rfc4648.hpp>
+using base64 = cppcodec::base64_rfc4648;
 
 int main(void) {
   httplib::Server svr;
@@ -127,6 +131,38 @@ int main(void) {
   // Throws API error
   svr.Get("/api/error", [](const Request &req, Response &res) {
     throw std::invalid_argument("MyFunc argument too large.");
+  });
+
+  //-------------------------------------
+  // OPTIONS /api/*
+  // Allow all
+  svr.Options(R"(/api/(.+))", [](const Request &req, Response &res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Headers", "*");
+    res.set_content("", "application/json");
+  });
+
+  //-------------------------------------
+  // POST /api/jobs
+  svr.Post("/api/jobs", [](const Request &req, Response &res) {
+    // std::cout << req.body << std::endl;
+    const json reqBody = json::parse(req.body);
+    const std::string imageBase64 = reqBody["image"];
+
+    std::cout << "base64 size: " << imageBase64.length() << std::endl;
+    std::vector<uint8_t> decoded = base64::decode(imageBase64);
+    std::cout << "binary size: " << decoded.size() << std::endl;
+
+    // std::ofstream f;
+    // f.open("output.jpeg", std::ios::out | std::ios::binary);
+    // f.write((char *)&decoded[0], decoded.size() * sizeof(decoded[0]));
+    // f.close();
+
+    std::stringstream body;
+    body << R"({"message":"OK"})";
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Headers", "*");
+    res.set_content(body.str(), "application/json");
   });
 
   //-------------------------------------

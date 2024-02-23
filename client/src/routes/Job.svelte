@@ -1,28 +1,54 @@
 <script>
   import { onMount } from "svelte";
+  import { fromUint8Array as base64Encode } from "js-base64";
+  import axios from "axios";
 
   export let id = null;
   export let imageFile = null;
 
   let imgDom = null;
 
-  onMount(() => {
+  onMount(async () => {
     // console.log(`onMount ${id} ${imageFile.name}`);
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
+    const dataUrlReader = new FileReader();
+    dataUrlReader.onload = function (e) {
       imgDom.setAttribute("src", e.target.result);
-      // console.log(`Loaded image ${id}`);
     };
-    reader.readAsDataURL(imageFile);
+    dataUrlReader.readAsDataURL(imageFile);
+
+    const buf = await imageFile.arrayBuffer();
+    console.log("binary size", buf.byteLength);
+    const base64 = base64Encode(new Uint8Array(buf));
+    console.log("base64 size", base64.length);
+
+    try {
+      const res = await axios({
+        method: "post",
+        baseURL: "http://127.0.0.1:8080/",
+        url: "/api/jobs",
+        data: {
+          image: base64,
+        },
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+      console.log(res);
+    } catch (e) {
+      console.error(e);
+    }
   });
 </script>
 
 <!------------------------------------>
 
 <div class="container">
-  <div>#{id} ({imageFile.type}) {imageFile.name}</div>
-  <img src="" alt="upload" class="img" bind:this={imgDom} />
+  <div class="header">#{id} ({imageFile.type}) {imageFile.name}</div>
+  <div>
+    <img src="" alt="upload" class="img" bind:this={imgDom} />
+  </div>
 </div>
 
 <!------------------------------------>
@@ -30,6 +56,10 @@
   .container {
     border: 1px solid #ccc;
     padding: 0.5rem;
+
+    display: flex;
+    flex-flow: column;
+    row-gap: 1ex;
   }
   .img {
     height: 150px;

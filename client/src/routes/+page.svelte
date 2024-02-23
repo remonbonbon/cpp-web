@@ -8,17 +8,17 @@
   let isDragOver = false;
   let dragOverCounter = 0;
 
-  function onDrop(ev) {
+  function onDrop(e) {
     isDragOver = false;
     dragOverCounter = 0;
 
-    _addImages(ev.dataTransfer.files);
+    _addImages(e.dataTransfer.files);
   }
 
-  function onInputFiles(ev) {
-    _addImages(ev.target.files);
+  function onInputFiles(e) {
+    _addImages(e.target.files);
 
-    ev.target.value = ""; // 同じファイルを連続で選ぶとchangeイベントが発生しない
+    e.target.value = ""; // 同じファイルを連続で選ぶとchangeイベントが発生しない
   }
 
   function _addImages(files) {
