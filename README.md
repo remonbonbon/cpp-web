@@ -22,12 +22,16 @@ $ cmake --build build --config Release
 ```sh
 $ cd ./client/
 
+// For developing
+$ npm run dev
+
+// Release build
 $ npm run build
 ```
 
 ### Run
 
 ```sh
-$ cd ./server/
+$ cd ./server
 $ ./build/main
 ```
