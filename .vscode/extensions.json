@@ -3,6 +3,7 @@
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "editorconfig.editorconfig",
-    "ms-vscode.cpptools-extension-pack"
+    "ms-vscode.cpptools-extension-pack",
+    "svelte.svelte-vscode"
   ]
 }
