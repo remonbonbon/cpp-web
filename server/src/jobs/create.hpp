@@ -1,5 +1,5 @@
-#ifndef _MY_CREATE_JOB_
-#define _MY_CREATE_JOB_
+#ifndef _MY_JOBS_CREATE_
+#define _MY_JOBS_CREATE_
 
 #include <chrono>
 #include <filesystem>
@@ -15,7 +15,7 @@ using json = nlohmann::json;
 #include <cppcodec/base64_rfc4648.hpp>
 using base64 = cppcodec::base64_rfc4648;
 
-#define DATA_DIR "./data/"
+#include "./_define.h"
 
 namespace jobs {
 

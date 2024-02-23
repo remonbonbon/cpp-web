@@ -1,10 +1,10 @@
 #include <sstream>
 #include <stdexcept>
-#include <thread>
 
 #include <httplib.h>
 
 #include "./jobs/create.hpp"
+#include "./jobs/get.hpp"
 #include "./utils/logger.hpp"
 
 int main(void) {
@@ -14,6 +14,11 @@ int main(void) {
   // POST /api/jobs/:id
   svr.Post("/api/jobs/:id",
            [](const auto &req, auto &res) { jobs::create(req, res); });
+
+  //-------------------------------------
+  // GET /api/jobs/:id
+  svr.Get("/api/jobs/:id",
+          [](const auto &req, auto &res) { jobs::get(req, res); });
 
   //-------------------------------------
   // OPTIONS /api/*
