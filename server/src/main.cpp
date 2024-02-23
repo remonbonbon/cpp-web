@@ -7,7 +7,6 @@
 
 #include "./jobs/create.hpp"
 #include "./jobs/get.hpp"
-#include "./jobs/run.hpp"
 
 int main(void) {
   httplib::Server svr;
@@ -21,11 +20,6 @@ int main(void) {
   // GET /api/jobs/:id
   svr.Get("/api/jobs/:id",
           [](const auto &req, auto &res) { jobs::get(req, res); });
-
-  //-------------------------------------
-  // GET /api/jobs/:id/run
-  svr.Get("/api/jobs/:id/run",
-          [](const auto &req, auto &res) { jobs::run(req, res); });
 
   //-------------------------------------
   // OPTIONS /api/*

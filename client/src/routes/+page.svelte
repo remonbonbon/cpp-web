@@ -1,10 +1,9 @@
 <script>
-  // import shuffle from "lodash/shuffle";
-  // import sample from "lodash/sample";
+  import { ulid } from "ulid";
+
   import Job from "./Job.svelte";
 
   let jobs = [];
-  let id = 1;
   let isDragOver = false;
   let dragOverCounter = 0;
 
@@ -25,8 +24,9 @@
     for (const file of files) {
       // console.log(file);
 
+      const id = ulid();
       jobs.unshift({
-        id: id++,
+        id,
         imageFile: file,
       });
     }

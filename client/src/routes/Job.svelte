@@ -2,12 +2,13 @@
   import { onMount } from "svelte";
   import { fromUint8Array as base64Encode } from "js-base64";
   import axios from "axios";
-  import { ulid } from "ulid";
+  import { dev as isDev } from "$app/environment";
 
   export let id = null;
   export let imageFile = null;
 
   let imgDom = null;
+  const baseURL = isDev ? "http://127.0.0.1:8080/" : "";
 
   onMount(async () => {
     // console.log(`onMount ${id} ${imageFile.name}`);
@@ -19,15 +20,14 @@
     dataUrlReader.readAsDataURL(imageFile);
 
     const buf = await imageFile.arrayBuffer();
-    console.log("binary size", buf.byteLength);
+    // console.log("binary size", buf.byteLength);
     const base64 = base64Encode(new Uint8Array(buf));
-    console.log("base64 size", base64.length);
+    // console.log("base64 size", base64.length);
 
     try {
-      const id = ulid();
       const res = await axios({
         method: "post",
-        baseURL: "http://127.0.0.1:8080/",
+        baseURL,
         url: `/api/jobs/${id}`,
         data: {
           filename: imageFile.name,
@@ -35,7 +35,7 @@
           data: base64,
         },
       });
-      console.log(res);
+      console.log(res.data);
     } catch (e) {
       console.error(e);
     }
@@ -45,7 +45,7 @@
 <!------------------------------------>
 
 <div class="container">
-  <div class="header">#{id} ({imageFile.type}) {imageFile.name}</div>
+  <div class="header">&lt;{id}&gt; {imageFile.name}</div>
   <div>
     <img src="" alt="upload" class="img" bind:this={imgDom} />
   </div>

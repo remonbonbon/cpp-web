@@ -4,6 +4,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <thread>
 
 #include <httplib.h>
 using Request = httplib::Request;
@@ -16,6 +17,7 @@ using json = nlohmann::json;
 using base64 = cppcodec::base64_rfc4648;
 
 #include "./_define.h"
+#include "./_run.hpp"
 
 namespace jobs {
 
@@ -35,7 +37,7 @@ void create(const Request &req, Response &res) {
     throw std::invalid_argument("Unsupported file type");
   }
 
-  // JSONファイルを保存
+  // JSONファイルを作成
   {
     std::filesystem::path p = DATA_DIR;
     p.append(id + ".json");
@@ -48,7 +50,7 @@ void create(const Request &req, Response &res) {
     data["id"] = id;
     data["filename"] = filename;
     data["type"] = type;
-    data["timestamp"] = now;
+    data["createdAt"] = now;
 
     std::ofstream f;
     f.open(p, std::ios::out);
@@ -70,6 +72,10 @@ void create(const Request &req, Response &res) {
     f.write((char *)&dataBinary[0], dataBinary.size() * sizeof(dataBinary[0]));
     f.close();
   }
+
+  // 実行
+  std::thread t(_runJob, id);
+  t.detach(); // スレッドを投げっぱなしにする
 
   std::stringstream body;
   body << R"({"message":"OK"})";
