@@ -38,7 +38,7 @@ int main(void) {
   });
 
   // Mount static file server
-  svr.set_mount_point("/public", "./public");
+  svr.set_mount_point("/public", "../public");
 
   // Error handling
   svr.set_error_handler([](const Request &req, Response &res) {
