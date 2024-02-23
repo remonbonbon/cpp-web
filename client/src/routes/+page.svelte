@@ -1,52 +1,67 @@
 <script>
   // import shuffle from "lodash/shuffle";
   // import sample from "lodash/sample";
+  import Job from "./Job.svelte";
+
+  let jobs = [];
+  let id = 1;
 
   function dropHandler(ev) {
-    console.log("File(s) dropped");
+    for (const file of ev.dataTransfer.files) {
+      // console.log(file);
 
-    // Prevent default behavior (Prevent file from being opened)
-    ev.preventDefault();
+      jobs.unshift({
+        id: id++,
+        imageFile: file,
+      });
 
-    // // if (ev.dataTransfer.items) {
-    //   // Use DataTransferItemList interface to access the file(s)
-    //   [...ev.dataTransfer.items].forEach((item, i) => {
-    //     // If dropped items aren't files, reject them
-    //     console.log(item);
-    //     if (item.kind === "file") {
-    //       const file = item.getAsFile();
-    //       console.log(`… file[${i}].name = ${file.name}`);
-    //     }
-    //   });
-    // // } else {
-    // Use DataTransfer interface to access the file(s)
-    [...ev.dataTransfer.files].forEach((file, i) => {
-      console.log(file);
-      console.log(`… file[${i}].name = ${file.name}`);
-    });
-    // }
-  }
-
-  function dragOverHandler(ev) {
-    // console.log("File(s) in drop zone");
-
-    // Prevent default behavior (Prevent file from being opened)
-    ev.preventDefault();
+      // Trigger reactive
+      jobs = jobs;
+    }
   }
 </script>
 
 <!------------------------------------>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="drop_zone" on:drop={dropHandler} on:dragover={dragOverHandler}>
-  <p>Drag one or more files to this <i>drop zone</i>.</p>
+<div class="container">
+  <div
+    class="dropZone"
+    on:drop|preventDefault={dropHandler}
+    on:dragover|preventDefault={() => {}}
+  >
+    <span>画像ファイルをここにドラッグ＆ドロップ</span>
+  </div>
+  <div class="jobs">
+    {#each jobs as { id, imageFile } (id)}
+      <Job bind:id bind:imageFile />
+    {/each}
+  </div>
 </div>
 
 <!------------------------------------>
 <style>
-  .drop_zone {
-    border: 5px solid blue;
-    width: 200px;
+  :global(html, body) {
+    margin: 0;
+    padding: 0;
+  }
+  :global(*) {
+    box-sizing: border-box;
+  }
+
+  .container {
+    padding: 0 1rem;
+  }
+  .dropZone {
+    margin-top: 1rem;
+    border: 4px dashed #888;
+    width: 100%;
     height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .jobs {
+    margin-top: 1rem;
   }
 </style>
