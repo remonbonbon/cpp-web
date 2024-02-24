@@ -3,6 +3,7 @@
 
 #include <ctime>
 #include <iostream>
+#include <mutex>
 
 #define RESET "\033[0m"
 // #define BLACK "\033[30m"   /* Black */
@@ -15,6 +16,8 @@
 // #define WHITE "\033[37m"   /* White */
 
 namespace logger {
+
+static std::mutex mtx;
 
 std::string _timestamp() {
   time_t now;
@@ -36,18 +39,24 @@ void _log(First first, Rest... rest) {
 }
 
 template <typename... Args> void info(Args... args) {
+  const std::lock_guard<std::mutex> lock(mtx);
+
   std::cout << GREEN;
   _log(_timestamp(), "[INFO]", args...);
   std::cout << RESET << std::endl;
 }
 
 template <typename... Args> void warn(Args... args) {
+  const std::lock_guard<std::mutex> lock(mtx);
+
   std::cout << YELLOW;
   _log(_timestamp(), "[WARN]", args...);
   std::cout << RESET << std::endl;
 }
 
 template <typename... Args> void error(Args... args) {
+  const std::lock_guard<std::mutex> lock(mtx);
+
   std::cout << RED;
   _log(_timestamp(), "[ERROR]", args...);
   std::cout << RESET << std::endl;
