@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from "svelte";
   import { ulid } from "ulid";
   import { fromUint8Array as base64Encode } from "js-base64";
   import axios from "axios";
@@ -26,10 +27,9 @@
   function _addImages(files) {
     for (const file of files) {
       const id = ulid();
-      const job = {
+      jobs.unshift({
         id,
-      };
-      jobs.unshift(job);
+      });
 
       (async function () {
         try {
@@ -55,6 +55,16 @@
     // Trigger reactive
     jobs = jobs;
   }
+
+  onMount(async () => {
+    const res = await axios({
+      method: "get",
+      baseURL: config.baseURL,
+      url: `/api/jobs`,
+    });
+    console.log(res);
+    jobs = res?.data?.jobs.map((id) => ({ id })) ?? [];
+  });
 </script>
 
 <!------------------------------------>
