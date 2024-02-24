@@ -7,9 +7,15 @@
 
 #include "./jobs/create.hpp"
 #include "./jobs/get.hpp"
+#include "./jobs/list.hpp"
 
 int main(void) {
   httplib::Server svr;
+
+  //-------------------------------------
+  // GET /api/jobs
+  svr.Get("/api/jobs",
+          [](const auto &req, auto &res) { jobs::list(req, res); });
 
   //-------------------------------------
   // POST /api/jobs/:id
